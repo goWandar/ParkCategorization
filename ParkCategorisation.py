@@ -1,37 +1,44 @@
 import pandas as pd
+from rapidfuzz import fuzz
 
-file_path = "C:\\Users\\v-henryn\\Downloads\\Parks.csv"
-df = pd.read_csv(file_path)
+# File paths
+tours_path = "tours_rows.csv"    # replace with your actual file path
+parks_path = "parks_rows.csv"    # replace with your actual file path
+output_path = "tour_park_mapping.csv"
 
-# #Define the columns to search
-# text_columns = ["title", "description", "itinerary", "accommodationType", "included", "excluded"]
+# Load CSVs
+tours_df = pd.read_csv(tours_path)
+parks_df = pd.read_csv(parks_path)
 
-# #Define national parks and their keywords
-# safari_parks = {
-# "Serengeti National Park": ["serengeti"],
-# "Ngorongoro Conservation Area": ["ngorongoro"],
-# "Lake Manyara National Park": ["manyara"],
-# "Tarangire National Park": ["tarangire"],
-# "Arusha National Park": ["arusha"],
-# "Ruaha National Park": ["ruaha"],
-# "Nyerere National Park": ["nyerere", "selous"],
-# "Katavi National Park": ["katavi"],
-# "Mahale Mountains National Park": ["mahale"],
-# "Gombe Stream National Park": ["gombe"],
-# "Mikumi National Park": ["mikumi"],
-# "Udzungwa Mountains National Park": ["udzungwa"],
-# "Saadani National Park": ["saadani"]
-# }
+# Columns from tours to search
+text_columns = ["title", "description", "itinerary", "accommodationType", "included", "excluded"]
 
-# #Function to determine which parks are mentioned
-# def find_parks(row):
-# text = " ".join(str(row[col]).lower() for col in text_columns if pd.notnull(row[col]))
-# matched = [park for park, keywords in safari_parks.items() if any(k in text for k in keywords)]
-# return ", ".join(matched)
+# Collect results
+results = []
 
-# #Apply the function to each row
-# df["covered_parks"] = df.apply(find_parks, axis=1)
+# Similarity threshold (0–100). You can adjust this:
+THRESHOLD = 85
 
-# #Show results: tour title + covered parks
-# for index, row in df.iterrows():
-# print(f"{row['title']}: {row['covered_parks']}")
+# Iterate through each tour
+for _, tour_row in tours_df.iterrows():
+    # Combine all relevant text fields into one string
+    tour_text = " ".join(str(tour_row[col]).lower() for col in text_columns if pd.notnull(tour_row[col]))
+    
+    # Check each park keyword
+    for _, park_row in parks_df.iterrows():
+        keyword = str(park_row["keyword"]).lower()
+        
+        # Exact or fuzzy match
+        if keyword in tour_text or fuzz.partial_ratio(keyword, tour_text) >= THRESHOLD:
+            results.append({
+                "TourId": tour_row["id"],   # tour id column
+                "ParkId": park_row["id"]    # park id column
+            })
+
+# Convert to DataFrame
+mapping_df = pd.DataFrame(results)
+
+# Save mapping to CSV
+mapping_df.to_csv(output_path, index=False)
+
+print(f"Mapping file created with fuzzy matching: {output_path}")
