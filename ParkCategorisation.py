@@ -4,7 +4,7 @@ file_path = "C:\\Users\\v-henryn\\Downloads\\Parks.csv"
 df = pd.read_csv(file_path)
 
 # #Define the columns to search
-# text_columns = ["title", "description", "itinerary", "safariType", "included", "excluded", "country"]
+# text_columns = ["title", "description", "itinerary", "accommodationType", "included", "excluded"]
 
 # #Define national parks and their keywords
 # safari_parks = {
